@@ -1,0 +1,119 @@
+<script type="text/x-red" data-template-name="file function">
+  <div class="form-row node-text-editor-row">
+    <div style="height: 250px;" class="node-text-editor" id="node-input-func-editor" ></div>
+  </div>
+  <div class="form-row node-input-filename">
+     <label for="node-input-filename"><i class="fa fa-file"></i> <span data-i18n="file-function.filename.label"></span></label>
+     <input type="text" id="node-input-filename" data-i18n="[placeholder]file-function.filename.placeholder">
+  </div>
+  <div class="form-row">
+    <label for="node-input-reloadfile" style="vertical-align: top"><i class="fa fa-refresh"></i> <span data-i18n="file-function.reload.label"></span></label>
+    <input type="checkbox" id="node-input-reloadfile" style="display: inline-block; width: auto; vertical-align: top;">
+    <label for="node-input-reloadfile" style="width: 70%;"> <span data-i18n="file-function.reload.desc"></span></label>
+  </div>
+  <div class="form-row">
+    <label for="node-input-outputs"><i class="fa fa-random"></i> <span data-i18n="file-function.outputs"></span></label>
+    <input id="node-input-outputs" style="width: 60px; height: 1.7em;" value="1">
+  </div>
+  <div class="form-row">
+    <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="file-function.name"></span></label>
+    <input type="text" id="node-input-name" data-i18n="[placeholder]file-function.name">
+  </div>
+  <div id="node-input-tip" class="form-tips" data-i18n="[html]file-function.tip"></div>
+</script>
+<script type="text/x-red" data-help-name="file function">
+
+  <p>Just like the core node "function", only that this node loads the script to be
+  executed from an actual file on your drive.</p>
+
+  <p>This may help you developing for Node RED. Instead of having to write your Javascript
+  code in that small textfield in your browser you can use your favorite editor/IDE.</p>
+
+  <p>The filename can be overridden by the <code>msg.<b>filename</b></code> property of the incoming message.</p>
+
+  <p>If no file exists with your given name in 'node-red/flows/local/', an
+  empty file with the given name will be created.</p>
+  <br>
+  <p>Modified node from
+  <a target="_blank" href="https://github.com/emiloberg/node-red-contrib-file-function">
+  https://github.com/emiloberg/node-red-contrib-file-function
+  </a>
+  .</p>
+
+</script>
+
+<script type="text/javascript">
+  RED.nodes.registerType('file function',{
+    color:"#fdd0a2",
+    category: 'function',
+    defaults: {
+      name: {value:""},
+      filename: {value:""},
+      reloadfile: {value:true},
+      outputs: {value:1}
+    },
+    inputs:1,
+    outputs:1,
+    icon: "file-function-icon.png",
+    label: function() {
+      return this.name || this.filename || 'file function';
+    },
+    labelStyle: function() {
+      return this.name ? "node_label_italic" : "";
+    },
+    oneditprepare: function() {
+      var that = this;
+      $("#node-input-outputs").spinner({
+        min:1
+      });
+
+      if(this.filename){
+        function functionDialogResize() {
+          var rows = $("#dialog-form>div:not(.node-text-editor-row)");
+          var height = $("#dialog-form").height();
+          for (var i=0;i<rows.size();i++) {
+            height -= $(rows[i]).outerHeight(true);
+          }
+          var editorRow = $("#dialog-form>div.node-text-editor-row");
+          height -= (parseInt(editorRow.css("marginTop"))+parseInt(editorRow.css("marginBottom")));
+          $(".node-text-editor").css("height",height+"px");
+          that.editor.resize();
+        };
+        $( "#dialog" ).on("dialogresize", functionDialogResize);
+        $( "#dialog" ).one("dialogopen", function(ev) {
+          var size = $( "#dialog" ).dialog('option','sizeCache-function');
+          if (size) {
+            $("#dialog").dialog('option','width',size.width);
+            $("#dialog").dialog('option','height',size.height);
+            functionDialogResize();
+          }
+        });
+        $( "#dialog" ).one("dialogclose", function(ev,ui) {
+          var height = $( "#dialog" ).dialog('option','height');
+          $( "#dialog" ).off("dialogresize",functionDialogResize);
+        });
+
+        that.editor = RED.editor.createEditor({
+          id: 'node-input-func-editor',
+          mode: 'ace/mode/javascript'
+        });
+
+        $.get("/file-function/load", {filename: that.filename, z: that.z}, function(data){
+          that.editor.setValue(data);
+        })
+
+        that.editor.focus();
+      }
+      else {
+        $("#node-input-func-editor").hide();
+      }
+    },
+    oneditsave: function(){
+      var that = this;
+      if(that.filename && that.editor){
+        var content = that.editor.getValue();
+        $.get("/file-function/write", {filename: that.filename, content: content, z: that.z});
+      }
+    }
+  });
+</script>

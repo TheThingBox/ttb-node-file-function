@@ -1,0 +1,15 @@
+{
+  "file-function": {
+    "filename": {
+      "label": "Filename",
+      "placeholder": "Filename"
+    },
+    "reload": {
+      "label": "Reload",
+      "desc": "Reload file from disk every time node is invoked?"
+    },
+    "outputs": "Outputs",
+    "name": "Name",
+    "tip": "The file path will be relative from the path of the flow."
+  }
+}
