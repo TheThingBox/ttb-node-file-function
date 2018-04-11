@@ -4,6 +4,11 @@ module.exports = function(RED) {
   var vm = require("vm");
   var fs = require("fs");
   var path = require("path");
+  var mkdirp = require("mkdirp");
+
+  var ensurePath = function(filename){
+    mkdirp.sync(path.dirname(filename))
+  }
 
   var createEmpty = function(filename,defaultContenue) {
     fs.writeFile(filename, (defaultContenue|| ""), function (err) {
@@ -16,7 +21,7 @@ module.exports = function(RED) {
     var contenue = "return msg;";
     if (filename !== '' && typeof(filename) != "undefined") {
       pathToFile = getScriptPath(filename,z);
-      console.log(pathToFile);
+      ensurePath(pathToFile);
       fs.readFile(pathToFile, {encoding: 'utf-8'}, function (err, fileContent) {
         if (err) {
           if (err.code === 'ENOENT') {
@@ -60,7 +65,6 @@ module.exports = function(RED) {
     this.loadedScript = '';
 
     var node = this;
-
     readFile(node.filename, node.z, function(err,data){
       if (err){
         return;
@@ -77,6 +81,7 @@ module.exports = function(RED) {
       } else if (node.reloadfile === false && filename === node.filename && node.loadedScript !== ''){
         runScript(node, msg, node.loadedScript);
       } else {
+        ensurePath(node.filename);
         readFile(filename, node.z, function(err,data){
           if (err){
             msg.error = err;
@@ -164,6 +169,7 @@ module.exports = function(RED) {
     var z = req.query.z;
     if(filename){
       var pathToFile = getScriptPath(filename,z);
+      ensurePath(pathToFile);
       fs.writeFile(pathToFile, content, {encoding: 'utf-8'},function (err, fileContent) {
         if (err) {
           console.log(err);

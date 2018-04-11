@@ -8,11 +8,14 @@
     }
   },
   "keywords": [
+    "TheThingBox",
     "node-red",
     "file-function",
-    "file",
     "function"
   ],
+  "dependencies": {
+    "mkdirp": "0.5.1"
+  },
   "author": "http://www.digitalairways.com/",
   "license": "http://www.wtfpl.net"
 }

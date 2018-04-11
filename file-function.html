@@ -1,6 +1,6 @@
 <script type="text/x-red" data-template-name="file function">
   <div class="form-row node-text-editor-row">
-    <div style="height: 250px;" class="node-text-editor" id="node-input-func-editor" ></div>
+    <div style="height: 250px; min-height: 150px;" class="node-text-editor" id="node-input-func-editor" ></div>
   </div>
   <div class="form-row node-input-filename">
      <label for="node-input-filename"><i class="fa fa-file"></i> <span data-i18n="file-function.filename.label"></span></label>
@@ -43,7 +43,7 @@
 </script>
 
 <script type="text/javascript">
-  RED.nodes.registerType('file function',{
+  RED.nodes.registerType('file function', {
     color:"#fdd0a2",
     category: 'function',
     defaults: {
@@ -63,56 +63,49 @@
     },
     oneditprepare: function() {
       var that = this;
+
       $("#node-input-outputs").spinner({
         min:1
       });
 
       if(this.filename){
-        function functionDialogResize() {
-          var rows = $("#dialog-form>div:not(.node-text-editor-row)");
-          var height = $("#dialog-form").height();
-          for (var i=0;i<rows.size();i++) {
-            height -= $(rows[i]).outerHeight(true);
-          }
-          var editorRow = $("#dialog-form>div.node-text-editor-row");
-          height -= (parseInt(editorRow.css("marginTop"))+parseInt(editorRow.css("marginBottom")));
-          $(".node-text-editor").css("height",height+"px");
-          that.editor.resize();
-        };
-        $( "#dialog" ).on("dialogresize", functionDialogResize);
-        $( "#dialog" ).one("dialogopen", function(ev) {
-          var size = $( "#dialog" ).dialog('option','sizeCache-function');
-          if (size) {
-            $("#dialog").dialog('option','width',size.width);
-            $("#dialog").dialog('option','height',size.height);
-            functionDialogResize();
-          }
-        });
-        $( "#dialog" ).one("dialogclose", function(ev,ui) {
-          var height = $( "#dialog" ).dialog('option','height');
-          $( "#dialog" ).off("dialogresize",functionDialogResize);
-        });
-
-        that.editor = RED.editor.createEditor({
+        this.editor = RED.editor.createEditor({
           id: 'node-input-func-editor',
           mode: 'ace/mode/javascript'
         });
-
-        $.get("/file-function/load", {filename: that.filename, z: that.z}, function(data){
+        $.get("/file-function/load", {filename: this.filename, z: this.z}, function(data){
           that.editor.setValue(data);
+          that.editor.focus();
         })
-
-        that.editor.focus();
       }
       else {
         $("#node-input-func-editor").hide();
       }
     },
-    oneditsave: function(){
-      var that = this;
-      if(that.filename && that.editor){
-        var content = that.editor.getValue();
-        $.get("/file-function/write", {filename: that.filename, content: content, z: that.z});
+    oneditsave: function() {
+      if(this.filename && this.editor){
+        $.get("/file-function/write", {filename: this.filename, content: this.editor.getValue(), z: this.z});
+        this.editor.destroy();
+        delete this.editor;
+      }
+    },
+    oneditcancel: function() {
+      if(this.filename && this.editor){
+        this.editor.destroy();
+        delete this.editor;
+      }
+    },
+    oneditresize: function(size) {
+      if(this.filename && this.editor){
+        var rows = $("#dialog-form>div:not(.node-text-editor-row)");
+        var height = $("#dialog-form").height();
+        for (var i=0; i<rows.size(); i++) {
+          height -= $(rows[i]).outerHeight(true);
+        }
+        var editorRow = $("#dialog-form>div.node-text-editor-row");
+        height -= (parseInt(editorRow.css("marginTop"))+parseInt(editorRow.css("marginBottom")));
+        $(".node-text-editor").css("height",height+"px");
+        this.editor.resize();
       }
     }
   });
