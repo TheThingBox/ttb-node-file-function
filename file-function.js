@@ -99,12 +99,108 @@ module.exports = function(RED) {
     var functionText = "var results = null; results = (function(msg){"+script+"\n})(msg);";
 
     var sandbox = {
-      console: console,
-      util: util,
-      Buffer: Buffer,
-      context: {
-        global: RED.settings.functionGlobalContext || {}
-      }
+        console: console,
+        util: util,
+        Buffer: Buffer,
+        Date: Date,
+        RED: {
+            util: RED.util
+        },
+        __node__: {
+            log: function() {
+                node.log.apply(node, arguments);
+            },
+            error: function() {
+                node.error.apply(node, arguments);
+            },
+            warn: function() {
+                node.warn.apply(node, arguments);
+            },
+            send: function(id, msgs) {
+                sendResults(node, id, msgs);
+            },
+            on: function() {
+                if (arguments[0] === "input") {
+                    throw new Error(RED._("function.error.inputListener"));
+                }
+                node.on.apply(node, arguments);
+            },
+            status: function() {
+                node.status.apply(node, arguments);
+            }
+        },
+        context: {
+            set: function() {
+                node.context().set.apply(node,arguments);
+            },
+            get: function() {
+                return node.context().get.apply(node,arguments);
+            },
+            keys: function() {
+                return node.context().keys.apply(node,arguments);
+            },
+            get global() {
+                return node.context().global;
+            },
+            get flow() {
+                return node.context().flow;
+            }
+        },
+        flow: {
+            set: function() {
+                node.context().flow.set.apply(node,arguments);
+            },
+            get: function() {
+                return node.context().flow.get.apply(node,arguments);
+            },
+            keys: function() {
+                return node.context().flow.keys.apply(node,arguments);
+            }
+        },
+        global:RED.settings.functionGlobalContext || {},
+        setTimeout: function () {
+            var func = arguments[0];
+            var timerId;
+            arguments[0] = function() {
+                sandbox.clearTimeout(timerId);
+                try {
+                    func.apply(this,arguments);
+                } catch(err) {
+                    node.error(err,{});
+                }
+            };
+            timerId = setTimeout.apply(this,arguments);
+            node.outstandingTimers.push(timerId);
+            return timerId;
+        },
+        clearTimeout: function(id) {
+            clearTimeout(id);
+            var index = node.outstandingTimers.indexOf(id);
+            if (index > -1) {
+                node.outstandingTimers.splice(index,1);
+            }
+        },
+        setInterval: function() {
+            var func = arguments[0];
+            var timerId;
+            arguments[0] = function() {
+                try {
+                    func.apply(this,arguments);
+                } catch(err) {
+                    node.error(err,{});
+                }
+            };
+            timerId = setInterval.apply(this,arguments);
+            node.outstandingIntervals.push(timerId);
+            return timerId;
+        },
+        clearInterval: function(id) {
+            clearInterval(id);
+            var index = node.outstandingIntervals.indexOf(id);
+            if (index > -1) {
+                node.outstandingIntervals.splice(index,1);
+            }
+        }
     };
 
     var context = vm.createContext(sandbox);
