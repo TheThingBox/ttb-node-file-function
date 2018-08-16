@@ -1,5 +1,8 @@
 {
   "file-function": {
+    "label": {
+      "function": "Function"
+    },
     "filename": {
       "label": "Filename",
       "placeholder": "Filename"

@@ -1,7 +1,10 @@
 {
   "file-function": {
+    "label": {
+      "function": "Fonction"
+    },
     "filename": {
-      "label": "Filename",
+      "label": "Fichier",
       "placeholder": "Nom du fichier"
     },
     "reload": {
