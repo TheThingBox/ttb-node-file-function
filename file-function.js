@@ -29,7 +29,7 @@ module.exports = function(RED) {
               if (type === 'object') {
                 type = Buffer.isBuffer(msg)?'Buffer':(util.isArray(msg)?'Array':'Date');
               }
-              node.error(RED._("function.error.non-message-returned",{ type: type }))
+              node.error(RED._("function.error.non-message-returned",{ type: type }));
             }
           }
         }
@@ -286,9 +286,9 @@ module.exports = function(RED) {
     if (util.hasOwnProperty('promisify')) {
       sandbox.setTimeout[util.promisify.custom] = function(after, value) {
         return new Promise(function(resolve, reject) {
-          sandbox.setTimeout(function(){ resolve(value) }, after);
+          sandbox.setTimeout(function(){ resolve(value); }, after);
         });
-      }
+      };
     }
 
     var context = vm.createContext(sandbox);
@@ -326,7 +326,6 @@ module.exports = function(RED) {
 
         var line = 0;
         var errorMessage;
-        var stack = err.stack.split(/\r?\n/);
         if (stack.length > 0) {
           while (line < stack.length && stack[line].indexOf("ReferenceError") !== 0) {
             line++;
